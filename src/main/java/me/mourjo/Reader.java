@@ -8,7 +8,7 @@ import java.util.Objects;
 public class Reader {
 
   public static Store read() {
-    Store store = new Store();
+    final Store store = new Store();
 
     try {
       var resource = new BufferedReader(new InputStreamReader(
