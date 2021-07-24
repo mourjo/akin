@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -16,10 +17,18 @@ import org.junit.jupiter.api.Test;
 class ReaderTest {
 
   static Store store;
+  static List<Row> allRowsInStore;
 
   @BeforeAll
   public static void setup() throws FileNotFoundException {
     store = Reader.read("src/main/dev_resources/dedup-2020/movies.tsv");
+    if (allRowsInStore == null) {
+      List<Row> list = new ArrayList<>();
+      for (Slice s : store.getAllSlices()){
+        list.addAll(store.lookupRows(s.getYear(), s.getLength()));
+      }
+      allRowsInStore = Collections.unmodifiableList(list);
+    }
   }
 
   @Test
@@ -31,7 +40,7 @@ class ReaderTest {
 
     // wc -l src/main/resources/dedup-2020/movies.tsv # header extra
     // 558459 src/main/resources/dedup-2020/movies.tsv
-    assertEquals(558458, store.getAllRows().size());
+    assertEquals(558458, allRowsInStore.size());
   }
 
   @Test
@@ -78,10 +87,9 @@ class ReaderTest {
   }
 
   public Row[] findTopMatchAcrossAllRows(Row currentRow) {
-    var allRows = new ArrayList<>(store.getAllRows());
-    Row matchRow = allRows.get(0);
+    Row matchRow = allRowsInStore.get(0);
     double maxScore = Double.NEGATIVE_INFINITY;
-    for (Row r : allRows) {
+    for (Row r : allRowsInStore) {
       double score = store.score(r, currentRow.getTerms());
       if (score > maxScore) {
         matchRow = r;

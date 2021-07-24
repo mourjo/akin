@@ -2,7 +2,6 @@ package me.mourjo;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,14 +11,12 @@ import java.util.Set;
 public class Store {
 
   private final Map<Integer, Map<Integer, List<Row>>> yearLenIdx;
-  private final List<Row> allRows; // is this needed?
   private final Map<String, Integer> termCounts;
   private int numRows = 0;
   private double sumRowLengths = 0d;
 
   Store() {
     yearLenIdx = new HashMap<>();
-    allRows = new ArrayList<>();
     termCounts = new HashMap<>();
   }
 
@@ -32,7 +29,6 @@ public class Store {
     yearLenIdx.putIfAbsent(row.getYear(), new HashMap<>());
     yearLenIdx.get(row.getYear()).putIfAbsent(row.getLen(), new ArrayList<>());
     yearLenIdx.get(row.getYear()).get(row.getLen()).add(row);
-    allRows.add(row);
     sumRowLengths += row.getTerms().size();
   }
 
@@ -52,10 +48,6 @@ public class Store {
       result += idf(qi) * (tf * (k + 1)) / (tf + k * (1 - beta + (beta * rowLen / avgLen)));
     }
     return result;
-  }
-
-  public List<Row> getAllRows() {
-    return Collections.unmodifiableList(allRows);
   }
 
   public List<Row> lookupRows(int year, int len) {
