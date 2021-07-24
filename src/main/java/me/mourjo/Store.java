@@ -52,7 +52,6 @@ public class Store {
     return result;
   }
 
-
   public List<Row> getAllRows() {
     return Collections.unmodifiableList(allRows);
   }

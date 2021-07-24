@@ -3,6 +3,7 @@ package me.mourjo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -17,8 +18,8 @@ class ReaderTest {
   static Store store;
 
   @BeforeAll
-  public static void setup() {
-    store = Reader.read();
+  public static void setup() throws FileNotFoundException {
+    store = Reader.read("src/main/dev_resources/dedup-2020/movies.tsv");
   }
 
   @Test
