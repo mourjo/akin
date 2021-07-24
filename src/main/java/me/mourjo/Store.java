@@ -2,7 +2,9 @@ package me.mourjo;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,7 +12,7 @@ import java.util.Set;
 public class Store {
 
   private final Map<Integer, Map<Integer, List<Row>>> yearLenIdx;
-  private final List<Row> allRows;
+  private final List<Row> allRows; // is this needed?
   private final Map<String, Integer> termCounts;
   private int numRows = 0;
   private double sumRowLengths = 0d;
@@ -59,9 +61,12 @@ public class Store {
   public List<Row> lookupRows(int year, int len) {
     var allLengthsForYear = yearLenIdx.get(year);
     if (allLengthsForYear != null) {
-      return allLengthsForYear.get(len);
+      var rows = allLengthsForYear.get(len);
+      if (rows != null) {
+        return Collections.unmodifiableList(rows);
+      }
     }
-    return null;
+    return List.of();
   }
 
   public Map<Integer, List<Row>> lookupAllLengthsForYear(int year) {
@@ -70,6 +75,16 @@ public class Store {
 
   public Set<Integer> getAllYears() {
     return yearLenIdx.keySet();
+  }
+
+  public Set<Slice> getAllSlices() {
+    Set<Slice> slices = new HashSet<>();
+    for (int thisYear : yearLenIdx.keySet()) {
+      for (int thisLength : yearLenIdx.get(thisYear).keySet()){
+        slices.add(new Slice(thisYear,thisLength));
+      }
+    }
+    return slices;
   }
 
 }
