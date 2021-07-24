@@ -4,20 +4,24 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class Row implements Comparable<Row> {
 
-  private final String id;
+  private static final AtomicInteger ID_GEN = new AtomicInteger();
+
+  private final int id;
+  private final String uuid;
   private final int year;
   private final int len;
   private final Set<String> terms;
 
   Row(String line) {
     String[] cols = line.split("\t");
-    id = cols[0];
+    uuid = cols[0];
+    id = ID_GEN.incrementAndGet();
     year = Integer.parseInt(cols[1]);
     len = Integer.parseInt(cols[2]);
 
@@ -27,7 +31,7 @@ public class Row implements Comparable<Row> {
     terms.addAll(splitToSet(cols[5]));
   }
 
-  public String getId() {
+  public int getId() {
     return id;
   }
 
@@ -74,20 +78,23 @@ public class Row implements Comparable<Row> {
       return false;
     }
     Row row = (Row) o;
-    return id.equals(row.id);
+    return id == row.id;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+    return id;
   }
 
   @Override
   public int compareTo(Row anotherRow) {
     if (terms.size() == anotherRow.terms.size()) {
-      return id.compareTo(anotherRow.id);
+      return Integer.compare(id, anotherRow.id);
     }
     return -Integer.compare(terms.size(), anotherRow.terms.size());
+  }
 
+  public String getUUID() {
+    return uuid;
   }
 }

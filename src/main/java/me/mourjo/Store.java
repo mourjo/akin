@@ -19,6 +19,10 @@ public class Store {
     termCounts = new HashMap<>();
   }
 
+  public int getSize() {
+    return numRows;
+  }
+
   public void addRow(String line) {
     var row = new Row(line);
     numRows++;
@@ -28,6 +32,7 @@ public class Store {
     yearLenIdx.putIfAbsent(row.getYear(), new HashMap<>());
     yearLenIdx.get(row.getYear()).putIfAbsent(row.getLen(), new TreeSet<>());
     yearLenIdx.get(row.getYear()).get(row.getLen()).add(row);
+
     sumRowLengths += row.getTerms().size();
   }
 
@@ -72,7 +77,7 @@ public class Store {
     Set<Slice> slices = new HashSet<>();
     for (int thisYear : yearLenIdx.keySet()) {
       for (int thisLength : yearLenIdx.get(thisYear).keySet()) {
-        slices.add(new Slice(thisYear, thisLength));
+        slices.add(Slice.getSlice(thisYear, thisLength));
       }
     }
     return slices;

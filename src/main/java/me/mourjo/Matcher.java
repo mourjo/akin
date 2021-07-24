@@ -10,80 +10,80 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class Matcher {
 
   final Store store;
-  ExecutorService tp;
 
   Matcher(String filePath) throws FileNotFoundException {
     store = Reader.read(filePath);
-    tp = Executors.newWorkStealingPool();
   }
 
-  void exportMatchesToFile(String outputFilePath) {
-    List<Future<Map<String, String>>> matchTasks = new ArrayList<>();
-
-    for (Slice s : store.getAllSlices()) {
-      matchTasks.add(tp.submit(() -> matchesFor(s)));
-    }
+  public void exportMatchesToFile(String outputFilePath) {
+    Set<Integer> matchedAlready = new HashSet<>(store.getSize() * 2);
+    var slices = store.getAllSlices();
 
     try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(outputFilePath)))) {
-
-      for (var matchTask : matchTasks) {
-        for (var match : matchTask.get().entrySet()) {
-          pw.println(match.getKey() + "," + match.getValue());
+      int sliceId = 1;
+      for (Slice slice : slices) {
+        for (var match : matchesFor(slice, matchedAlready).entrySet()) {
+          pw.println(match.getKey().getUUID() + "\t" + match.getValue().getUUID());
         }
+        System.out.print("Completed " + sliceId++ + " out of " + slices.size() + " tasks.\r");
       }
+      System.out.println("\n");
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 
-  Map<String, String> matchesFor(Slice s) {
-    int year = s.getYear(), len = s.getLength();
-    Map<String, String> matches = new HashMap<>();
+  private List<Set<Row>> potentialMatchWindows(Slice slice) {
+    List<Set<Row>> windows = new ArrayList<>();
+
+    for (int y = slice.getYear() - 1; y <= slice.getYear() + 1; y++) {
+      for (int ln = (int) (0.95 * slice.getLength()); ln <= 1.05 * slice.getLength(); ln++) {
+        windows.add(store.lookupRows(y, ln));
+      }
+    }
+    return windows;
+  }
+
+  public Map<Row, Row> matchesFor(Slice slice, Set<Integer> processed) {
+    int year = slice.getYear(), len = slice.getLength();
+    Map<Row, Row> matches = new HashMap<>();
 
     for (Row currentRow : store.lookupRows(year, len)) {
+      if (processed.contains(currentRow.getId())) {
+        continue;
+      }
+      processed.add(currentRow.getId());
       if (currentRow.getTerms().isEmpty()) {
         continue; // needs to be handled later
       }
 
-      List<Set<Row>> windows = new ArrayList<>();
-
-      for (int y : List.of(year - 1, year + 1, year)) {
-        for (int ln = (int) (0.95 * len); ln <= 1.05 * len; ln++) {
-          windows.add(store.lookupRows(y, ln));
-        }
-      }
+      List<Set<Row>> windows = potentialMatchWindows(slice);
 
       if (windows.isEmpty()) {
         continue;
       }
 
-      Set<String> matchedAlready = new HashSet<>();
-      matchedAlready.add(currentRow.getId());
-
       Row bestMatch = null;
       double bestScore = Double.NEGATIVE_INFINITY;
       for (Set<Row> window : windows) {
-        for (Row r : window) {
-          if (!matchedAlready.contains(r.getId())) {
-            double currentScore = store.score(r, currentRow.getTerms());
+        for (Row candidate : window) {
+          if (!processed.contains(candidate.getId())) {
+            double currentScore = store.score(candidate, currentRow.getTerms());
             if (currentScore > bestScore) {
-              bestMatch = r;
+              bestMatch = candidate;
               bestScore = currentScore;
             }
           }
         }
-        if (bestMatch != null) {
-          // no match (maybe only one, or all empty)
-          matchedAlready.add(bestMatch.getId());
-          matches.putIfAbsent(currentRow.getId(), bestMatch.getId());
-        }
+      }
+      if (bestMatch != null) {
+        // no match (maybe only one, or all empty)
+        processed.add(bestMatch.getId());
+        matches.putIfAbsent(currentRow, bestMatch);
       }
     }
     return matches;

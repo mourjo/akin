@@ -6,9 +6,8 @@ import java.util.Locale;
 
 public class Utils {
 
-  public static final String asciiFold(String s) {
+  public static String asciiFold(String s) {
     return Normalizer.normalize(s.strip().toLowerCase(Locale.ROOT), Form.NFD)
-        .replaceAll("(\\p{InCombiningDiacriticalMarks}+)|( )", "");
+        .replaceAll("[^a-z]+", "");
   }
-
 }
