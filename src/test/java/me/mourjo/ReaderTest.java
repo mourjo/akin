@@ -58,7 +58,7 @@ class ReaderTest {
     var tp = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     List<Future<Row[]>> results = new ArrayList<>();
 
-    for (int i = 0; i < 400; i++) {
+    for (int i = 0; i < 100; i++) {
       var currentRow = allRowsInStore.get(i);
       results.add(tp.submit(() -> findTopMatchAcrossAllRows(currentRow)));
     }
