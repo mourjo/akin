@@ -1,9 +1,6 @@
 package me.mourjo;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,30 +11,16 @@ import java.util.Set;
 
 public class Matcher {
 
-  final Store store;
-  final Set<Integer> matchedRows;
+  private final Store store;
+  private final Set<Integer> matchedRows;
 
   Matcher(String filePath) throws FileNotFoundException {
     store = Reader.read(filePath);
     matchedRows = new HashSet<>(store.getSize() * 2);
   }
 
-  public void exportMatchesToFile(String outputFilePath) {
-    var slices = store.getAllSlices();
-
-    try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(outputFilePath)))) {
-      int sliceId = 1;
-      var matchSlices = computeMatchSlices();
-      while (matchSlices.hasNext()) {
-        for (var match : matchSlices.next().entrySet()) {
-          pw.println(match.getKey().getUUID() + "\t" + match.getValue().getUUID());
-        }
-        System.out.print("Completed " + sliceId++ + " out of " + slices.size() + " tasks.\r");
-      }
-      System.out.println("\n");
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+  public int getSliceCount() {
+    return store.getAllSlices().size();
   }
 
   public Iterator<Map<Row, Row>> computeMatchSlices() {
@@ -78,7 +61,7 @@ public class Matcher {
       }
       matchedRows.add(currentRow.getId());
       if (currentRow.getTerms().isEmpty()) {
-        continue; // needs to be handled later
+        continue;
       }
 
       List<Set<Row>> windows = potentialMatchWindows(slice);
