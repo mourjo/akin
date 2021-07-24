@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,19 +15,21 @@ import java.util.Set;
 public class Matcher {
 
   final Store store;
+  final Set<Integer> matchedRows;
 
   Matcher(String filePath) throws FileNotFoundException {
     store = Reader.read(filePath);
+    matchedRows = new HashSet<>(store.getSize() * 2);
   }
 
   public void exportMatchesToFile(String outputFilePath) {
-    Set<Integer> matchedAlready = new HashSet<>(store.getSize() * 2);
     var slices = store.getAllSlices();
 
     try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(outputFilePath)))) {
       int sliceId = 1;
-      for (Slice slice : slices) {
-        for (var match : matchesFor(slice, matchedAlready).entrySet()) {
+      var matchSlices = computeMatchSlices();
+      while(matchSlices.hasNext()) {
+        for (var match : matchSlices.next().entrySet()) {
           pw.println(match.getKey().getUUID() + "\t" + match.getValue().getUUID());
         }
         System.out.print("Completed " + sliceId++ + " out of " + slices.size() + " tasks.\r");
@@ -35,6 +38,21 @@ public class Matcher {
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  public Iterator<Map<Row, Row>> computeMatchSlices() {
+    var slices = store.getAllSlices().iterator();
+    return new Iterator<>() {
+      @Override
+      public boolean hasNext() {
+        return slices.hasNext();
+      }
+
+      @Override
+      public Map<Row, Row> next() {
+        return matchesFor(slices.next());
+      }
+    };
   }
 
   private List<Set<Row>> potentialMatchWindows(Slice slice) {
@@ -48,15 +66,15 @@ public class Matcher {
     return windows;
   }
 
-  public Map<Row, Row> matchesFor(Slice slice, Set<Integer> processed) {
+  public Map<Row, Row> matchesFor(Slice slice) {
     int year = slice.getYear(), len = slice.getLength();
     Map<Row, Row> matches = new HashMap<>();
 
     for (Row currentRow : store.lookupRows(year, len)) {
-      if (processed.contains(currentRow.getId())) {
+      if (matchedRows.contains(currentRow.getId())) {
         continue;
       }
-      processed.add(currentRow.getId());
+      matchedRows.add(currentRow.getId());
       if (currentRow.getTerms().isEmpty()) {
         continue; // needs to be handled later
       }
@@ -71,7 +89,7 @@ public class Matcher {
       double bestScore = Double.NEGATIVE_INFINITY;
       for (Set<Row> window : windows) {
         for (Row candidate : window) {
-          if (!processed.contains(candidate.getId())) {
+          if (!matchedRows.contains(candidate.getId())) {
             double currentScore = store.score(candidate, currentRow.getTerms());
             if (currentScore > bestScore) {
               bestMatch = candidate;
@@ -82,7 +100,7 @@ public class Matcher {
       }
       if (bestMatch != null) {
         // no match (maybe only one, or all empty)
-        processed.add(bestMatch.getId());
+        matchedRows.add(bestMatch.getId());
         matches.putIfAbsent(currentRow, bestMatch);
       }
     }

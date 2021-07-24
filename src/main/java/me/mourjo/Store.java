@@ -13,6 +13,7 @@ public class Store {
   private final Map<String, Integer> termCounts;
   private int numRows = 0;
   private double sumRowLengths = 0d;
+  private Set<Slice> allSlices;
 
   Store() {
     yearLenIdx = new HashMap<>();
@@ -29,9 +30,9 @@ public class Store {
     for (String term : row.getTerms()) {
       termCounts.compute(term, (t, c) -> (c == null) ? 1 : c + 1);
     }
-    yearLenIdx.putIfAbsent(row.getYear(), new HashMap<>());
-    yearLenIdx.get(row.getYear()).putIfAbsent(row.getLen(), new TreeSet<>());
-    yearLenIdx.get(row.getYear()).get(row.getLen()).add(row);
+    yearLenIdx.putIfAbsent(row.getMovieYear(), new HashMap<>());
+    yearLenIdx.get(row.getMovieYear()).putIfAbsent(row.getMovieLength(), new TreeSet<>());
+    yearLenIdx.get(row.getMovieYear()).get(row.getMovieLength()).add(row);
 
     sumRowLengths += row.getTerms().size();
   }
@@ -65,21 +66,17 @@ public class Store {
     return Set.of();
   }
 
-  public Map<Integer, Set<Row>> lookupAllLengthsForYear(int year) {
-    return yearLenIdx.get(year);
-  }
-
-  public Set<Integer> getAllYears() {
-    return yearLenIdx.keySet();
-  }
-
   public Set<Slice> getAllSlices() {
+    if (allSlices != null) {
+      return allSlices;
+    }
     Set<Slice> slices = new HashSet<>();
     for (int thisYear : yearLenIdx.keySet()) {
       for (int thisLength : yearLenIdx.get(thisYear).keySet()) {
         slices.add(Slice.getSlice(thisYear, thisLength));
       }
     }
+    allSlices = slices;
     return slices;
   }
 }

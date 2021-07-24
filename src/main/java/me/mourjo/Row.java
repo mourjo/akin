@@ -14,16 +14,16 @@ public class Row implements Comparable<Row> {
 
   private final int id;
   private final String uuid;
-  private final int year;
-  private final int len;
+  private final int movieYear;
+  private final int movieLength;
   private final Set<String> terms;
 
   Row(String line) {
     String[] cols = line.split("\t");
     uuid = cols[0];
     id = ID_GEN.incrementAndGet();
-    year = Integer.parseInt(cols[1]);
-    len = Integer.parseInt(cols[2]);
+    movieYear = Integer.parseInt(cols[1]);
+    movieLength = Integer.parseInt(cols[2]);
 
     // assume terms are not repeated across director, actor, genre
     terms = splitToSet(cols[3]);
@@ -35,12 +35,12 @@ public class Row implements Comparable<Row> {
     return id;
   }
 
-  public int getYear() {
-    return year;
+  public int getMovieYear() {
+    return movieYear;
   }
 
-  public int getLen() {
-    return len;
+  public int getMovieLength() {
+    return movieLength;
   }
 
   public Set<String> getTerms() {
@@ -63,8 +63,8 @@ public class Row implements Comparable<Row> {
   public String toString() {
     return "Row{" +
         "id='" + id + '\'' +
-        ", year=" + year +
-        ", len=" + len +
+        ", year=" + movieYear +
+        ", length=" + movieLength +
         ", terms=" + terms +
         '}';
   }
