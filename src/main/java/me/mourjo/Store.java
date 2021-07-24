@@ -1,16 +1,15 @@
 package me.mourjo;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class Store {
 
-  private final Map<Integer, Map<Integer, List<Row>>> yearLenIdx;
+  private final Map<Integer, Map<Integer, Set<Row>>> yearLenIdx;
   private final Map<String, Integer> termCounts;
   private int numRows = 0;
   private double sumRowLengths = 0d;
@@ -27,7 +26,7 @@ public class Store {
       termCounts.compute(term, (t, c) -> (c == null) ? 1 : c + 1);
     }
     yearLenIdx.putIfAbsent(row.getYear(), new HashMap<>());
-    yearLenIdx.get(row.getYear()).putIfAbsent(row.getLen(), new ArrayList<>());
+    yearLenIdx.get(row.getYear()).putIfAbsent(row.getLen(), new TreeSet<>());
     yearLenIdx.get(row.getYear()).get(row.getLen()).add(row);
     sumRowLengths += row.getTerms().size();
   }
@@ -50,18 +49,18 @@ public class Store {
     return result;
   }
 
-  public List<Row> lookupRows(int year, int len) {
+  public Set<Row> lookupRows(int year, int len) {
     var allLengthsForYear = yearLenIdx.get(year);
     if (allLengthsForYear != null) {
       var rows = allLengthsForYear.get(len);
       if (rows != null) {
-        return Collections.unmodifiableList(rows);
+        return Collections.unmodifiableSet(rows);
       }
     }
-    return List.of();
+    return Set.of();
   }
 
-  public Map<Integer, List<Row>> lookupAllLengthsForYear(int year) {
+  public Map<Integer, Set<Row>> lookupAllLengthsForYear(int year) {
     return yearLenIdx.get(year);
   }
 
@@ -72,11 +71,10 @@ public class Store {
   public Set<Slice> getAllSlices() {
     Set<Slice> slices = new HashSet<>();
     for (int thisYear : yearLenIdx.keySet()) {
-      for (int thisLength : yearLenIdx.get(thisYear).keySet()){
-        slices.add(new Slice(thisYear,thisLength));
+      for (int thisLength : yearLenIdx.get(thisYear).keySet()) {
+        slices.add(new Slice(thisYear, thisLength));
       }
     }
     return slices;
   }
-
 }

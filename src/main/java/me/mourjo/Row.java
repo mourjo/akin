@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class Row {
+public class Row implements Comparable<Row> {
 
   private final String id;
   private final int year;
@@ -80,5 +80,14 @@ public class Row {
   @Override
   public int hashCode() {
     return Objects.hash(id);
+  }
+
+  @Override
+  public int compareTo(Row anotherRow) {
+    if (terms.size() == anotherRow.terms.size()) {
+      return id.compareTo(anotherRow.id);
+    }
+    return -Integer.compare(terms.size(), anotherRow.terms.size());
+
   }
 }

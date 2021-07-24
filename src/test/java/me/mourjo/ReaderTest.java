@@ -6,7 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -24,9 +27,10 @@ class ReaderTest {
     store = Reader.read("src/main/dev_resources/dedup-2020/movies.tsv");
     if (allRowsInStore == null) {
       List<Row> list = new ArrayList<>();
-      for (Slice s : store.getAllSlices()){
+      for (Slice s : store.getAllSlices()) {
         list.addAll(store.lookupRows(s.getYear(), s.getLength()));
       }
+      list.sort(Comparator.comparingInt(o -> -o.getTerms().size()));
       allRowsInStore = Collections.unmodifiableList(list);
     }
   }
@@ -45,8 +49,6 @@ class ReaderTest {
 
   @Test
   public void closestMatchIsItselfOrSubset() throws InterruptedException, ExecutionException {
-    int currentRowPicker = 10;
-
     // cut -f3 src/main/resources/dedup-2020/movies.tsv | sort | uniq -c | sort -nr | head
     // 27194 90
     // 13916 95
@@ -56,17 +58,9 @@ class ReaderTest {
     var tp = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     List<Future<Row[]>> results = new ArrayList<>();
 
-    for (int year = 2016; year <= 2020; year++) {
-      for (int len = 90; len >= 80; len -= 5) {
-        for (int repeater = 0; repeater < 25; repeater++, currentRowPicker += 251) {
-          var rowsThisYear = store.lookupRows(year, len);
-          var currentRow = rowsThisYear.get(currentRowPicker % rowsThisYear.size());
-          if (currentRow.getTerms().isEmpty()) {
-            continue; // nothing to match with
-          }
-          results.add(tp.submit(() -> findTopMatchAcrossAllRows(currentRow)));
-        }
-      }
+    for (int i = 0; i < 400; i++) {
+      var currentRow = allRowsInStore.get(i);
+      results.add(tp.submit(() -> findTopMatchAcrossAllRows(currentRow)));
     }
 
     tp.shutdown();
@@ -75,19 +69,22 @@ class ReaderTest {
 
     for (Future<Row[]> f : results) {
       Row[] match = f.get();
-      var firstId = match[0].getId();
-      var secondId = match[1].getId();
-
-      var firstTerms = match[0].getTerms();
-      var secondTerms = match[1].getTerms();
-
-      assertTrue(firstId.equals(secondId) || firstTerms.containsAll(secondTerms),
-          firstId + " did not match " + secondId);
+      assertTrue(areSimilar(match[0], match[1]), "Did not match:\n" + match[0] + "\n" + match[1]);
     }
   }
 
+  public boolean areSimilar(Row row1, Row row2) {
+    var commons = new HashSet<>(row1.getTerms());
+    commons.retainAll(row2.getTerms());
+    return hasEnoughOverlap(commons, row1.getTerms()) && hasEnoughOverlap(commons, row2.getTerms());
+  }
+
+  public boolean hasEnoughOverlap(Set<String> s1, Set<String> s2) {
+    return 2 * Math.abs((double) s1.size() - s2.size()) / (s1.size() + s2.size()) < 0.4;
+  }
+
   public Row[] findTopMatchAcrossAllRows(Row currentRow) {
-    Row matchRow = allRowsInStore.get(0);
+    Row matchRow = null;
     double maxScore = Double.NEGATIVE_INFINITY;
     for (Row r : allRowsInStore) {
       double score = store.score(r, currentRow.getTerms());

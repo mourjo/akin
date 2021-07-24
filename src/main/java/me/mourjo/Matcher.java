@@ -52,7 +52,7 @@ public class Matcher {
         continue; // needs to be handled later
       }
 
-      List<List<Row>> windows = new ArrayList<>();
+      List<Set<Row>> windows = new ArrayList<>();
 
       for (int y : List.of(year - 1, year + 1, year)) {
         for (int ln = (int) (0.95 * len); ln <= 1.05 * len; ln++) {
@@ -69,7 +69,7 @@ public class Matcher {
 
       Row bestMatch = null;
       double bestScore = Double.NEGATIVE_INFINITY;
-      for (List<Row> window : windows) {
+      for (Set<Row> window : windows) {
         for (Row r : window) {
           if (!matchedAlready.contains(r.getId())) {
             double currentScore = store.score(r, currentRow.getTerms());
