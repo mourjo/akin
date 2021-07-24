@@ -28,7 +28,7 @@ public class Matcher {
     try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(outputFilePath)))) {
       int sliceId = 1;
       var matchSlices = computeMatchSlices();
-      while(matchSlices.hasNext()) {
+      while (matchSlices.hasNext()) {
         for (var match : matchSlices.next().entrySet()) {
           pw.println(match.getKey().getUUID() + "\t" + match.getValue().getUUID());
         }
@@ -55,12 +55,14 @@ public class Matcher {
     };
   }
 
-  private List<Set<Row>> potentialMatchWindows(Slice slice) {
+  public List<Set<Row>> potentialMatchWindows(Slice slice) {
     List<Set<Row>> windows = new ArrayList<>();
 
-    for (int y = slice.getYear() - 1; y <= slice.getYear() + 1; y++) {
-      for (int ln = (int) (0.95 * slice.getLength()); ln <= 1.05 * slice.getLength(); ln++) {
-        windows.add(store.lookupRows(y, ln));
+    for (int year = slice.getYear() - 1; year <= slice.getYear() + 1; year++) {
+      for (int length = (int) (0.95 * slice.getLength());
+          length <= Math.ceil(1.05 * slice.getLength());
+          length++) {
+        windows.add(store.lookupRows(year, length));
       }
     }
     return windows;

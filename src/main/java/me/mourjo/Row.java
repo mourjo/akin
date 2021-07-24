@@ -62,7 +62,7 @@ public class Row implements Comparable<Row> {
   @Override
   public String toString() {
     return "Row{" +
-        "id='" + id + '\'' +
+        "id=" + id +
         ", year=" + movieYear +
         ", length=" + movieLength +
         ", terms=" + terms +
