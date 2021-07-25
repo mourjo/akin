@@ -1,3 +1,6 @@
 .idea/
 akin.iml
 target/
+.DS_Store
+src/main/.DS_Store
+src/main/dev_resources/.DS_Store
