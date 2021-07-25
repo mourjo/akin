@@ -19,6 +19,9 @@ public class Matcher {
     matchedRows = new HashSet<>(store.size() * 2);
   }
 
+  /**
+   * @return Number of slices in the store.
+   */
   public int getSliceCount() {
     return store.getAllSlices().size();
   }
@@ -27,6 +30,11 @@ public class Matcher {
     return store.size();
   }
 
+  /**
+   * For each slice, find each row's match.
+   *
+   * @return an iterator over each slice's matches
+   */
   public Iterator<Map<Row, Row>> computeSliceMatches() {
     var slices = store.getAllSlices().iterator();
     return new Iterator<>() {
@@ -42,6 +50,12 @@ public class Matcher {
     };
   }
 
+  /**
+   * Given a slice, find all rows with the condition, 1 year more or less, length 5% more or less
+   *
+   * @param slice
+   * @return List of rows in all neighbouring slices
+   */
   public List<Set<Row>> potentialMatchWindows(Slice slice) {
     List<Set<Row>> windows = new ArrayList<>();
 
@@ -55,6 +69,13 @@ public class Matcher {
     return windows;
   }
 
+  /**
+   * For a given slice, find a match for every row in the slice. This requires looking at
+   * neighbouring slices that satisfy the condition: 1 year more or less and length 5% more or less
+   *
+   * @param slice
+   * @return map of matchings
+   */
   private Map<Row, Row> matchesFor(Slice slice) {
     int movieYear = slice.getMovieYear(), movieLength = slice.getMovieLength();
     Map<Row, Row> matches = new HashMap<>();

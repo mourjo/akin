@@ -13,9 +13,15 @@ public class Reader {
     return read(new FileInputStream(filePath));
   }
 
+  /**
+   * Read rows from an input stream and convert it into rows that can be stored for computing match
+   * scores.
+   *
+   * @param stream
+   * @return store with all rows
+   */
   public static Store read(InputStream stream) {
     final Store store = new Store();
-
     try {
       var resource = new BufferedReader(new InputStreamReader(stream));
       String line;
@@ -27,8 +33,6 @@ public class Reader {
     } catch (IOException e) {
       e.printStackTrace();
     }
-
     return store;
   }
-
 }

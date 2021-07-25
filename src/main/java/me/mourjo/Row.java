@@ -18,6 +18,11 @@ public class Row implements Comparable<Row> {
   private final int movieLength;
   private final Set<String> terms;
 
+  /**
+   * Construct a row from a raw line read from a file. Compute relevant auxiliary data necessary for
+   * ranking documents. Merge actors, directors and genres into one set of terms to make the ranking
+   * process simpler.
+   */
   Row(String line) {
     String[] cols = line.split("\t");
     uuid = cols[0];
@@ -43,11 +48,17 @@ public class Row implements Comparable<Row> {
     return Collections.unmodifiableSet(terms);
   }
 
+  /**
+   * Convert a line into terms by splitting with "," and cleaning up non-ASCII characters.
+   */
   private List<String> computeTerms(String line) {
     return Arrays.stream(line.split(",")).map(Utils::asciiFold)
         .collect(Collectors.toList());
   }
 
+  /**
+   * Convert a line into a set of terms if it is not empty (\\N)
+   */
   private Set<String> splitToSet(String line) {
     if (line.equals("\\N")) {
       return new HashSet<>();

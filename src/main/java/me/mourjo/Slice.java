@@ -15,6 +15,12 @@ public class Slice {
     this.movieLength = movieLength;
   }
 
+  /**
+   * Get or create a slice if not previously seen.
+   *
+   * @param year
+   * @param length
+   */
   public static Slice getSlice(int year, int length) {
     if (tab.containsKey(year) && tab.get(year).containsKey(length)) {
       return tab.get(year).get(length);

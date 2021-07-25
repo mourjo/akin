@@ -24,6 +24,12 @@ public class Store {
     return numRows;
   }
 
+  /**
+   * Add a row to the store, updating the index to read via slices and additional computations
+   * necessary for calculating the score.
+   *
+   * @param line
+   */
   public void addRow(String line) {
     var row = new Row(line);
     numRows++;
@@ -37,13 +43,22 @@ public class Store {
     sumRowLengths += row.getTerms().size();
   }
 
+  /**
+   * Compute the IDF (inverse document frequency) value for a query qi.
+   */
   private double idf(String qi) {
     var nqi = termCounts.getOrDefault(qi, 0);
     return Math.log(1.0 + ((double) numRows - nqi + 0.5) / (nqi + 0.5));
   }
 
+  /**
+   * Calculate the rank score according to the BM25 algorithm. See https://en.wikipedia.org/wiki/Okapi_BM25
+   *
+   * @param row   that is being scored
+   * @param query that the row is being scored for
+   * @return score for this row
+   */
   public double score(Row row, Set<String> query) {
-    // See https://en.wikipedia.org/wiki/Okapi_BM25
     double result = 0, beta = 0.75, k = 1.2;
     for (String qi : query) {
       var terms = row.getTerms();
@@ -55,6 +70,9 @@ public class Store {
     return result;
   }
 
+  /**
+   * Find rows that with the given year/length combination using the index.
+   */
   public Set<Row> lookupRows(int year, int len) {
     var allLengthsForYear = yearLenIdx.get(year);
     if (allLengthsForYear != null) {
@@ -66,6 +84,11 @@ public class Store {
     return Set.of();
   }
 
+  /**
+   * Returns all slices based on the rows in the store. Memoized for multiple invocations.
+   *
+   * @return set of slices.
+   */
   public Set<Slice> getAllSlices() {
     if (allSlices != null) {
       return allSlices;

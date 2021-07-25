@@ -7,6 +7,12 @@ import java.io.PrintWriter;
 
 public class Launcher {
 
+  /**
+   * Exports matches to a file and prints a progress report while the process is going on.
+   *
+   * @param matcher
+   * @param outputFilePath
+   */
   public static void exportMatchesToFile(Matcher matcher, String outputFilePath) {
     var slicesCount = matcher.getSliceCount();
 
