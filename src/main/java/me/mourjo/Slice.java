@@ -7,12 +7,12 @@ import java.util.Objects;
 public class Slice {
 
   public static Map<Integer, Map<Integer, Slice>> tab = new HashMap<>();
-  private final int year;
-  private final int length;
+  private final int movieYear;
+  private final int movieLength;
 
-  private Slice(int year, int length) {
-    this.year = year;
-    this.length = length;
+  private Slice(int movieYear, int movieLength) {
+    this.movieYear = movieYear;
+    this.movieLength = movieLength;
   }
 
   public static Slice getSlice(int year, int length) {
@@ -24,12 +24,12 @@ public class Slice {
     return tab.get(year).get(length);
   }
 
-  public int getYear() {
-    return year;
+  public int getMovieYear() {
+    return movieYear;
   }
 
-  public int getLength() {
-    return length;
+  public int getMovieLength() {
+    return movieLength;
   }
 
   @Override
@@ -41,19 +41,19 @@ public class Slice {
       return false;
     }
     Slice slice = (Slice) o;
-    return year == slice.year && length == slice.length;
+    return movieYear == slice.movieYear && movieLength == slice.movieLength;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(year, length);
+    return Objects.hash(movieYear, movieLength);
   }
 
   @Override
   public String toString() {
     return "Slice{" +
-        "year=" + year +
-        ", length=" + length +
+        "year=" + movieYear +
+        ", length=" + movieLength +
         '}';
   }
 }

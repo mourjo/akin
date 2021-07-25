@@ -31,10 +31,6 @@ public class Row implements Comparable<Row> {
     terms.addAll(splitToSet(cols[5]));
   }
 
-  public int getId() {
-    return id;
-  }
-
   public int getMovieYear() {
     return movieYear;
   }

@@ -15,12 +15,12 @@ public class Store {
   private double sumRowLengths = 0d;
   private Set<Slice> allSlices;
 
-  Store() {
+  public Store() {
     yearLenIdx = new HashMap<>();
     termCounts = new HashMap<>();
   }
 
-  public int getSize() {
+  public int size() {
     return numRows;
   }
 

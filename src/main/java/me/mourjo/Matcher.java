@@ -12,18 +12,18 @@ import java.util.Set;
 public class Matcher {
 
   private final Store store;
-  private final Set<Integer> matchedRows;
+  private final Set<Row> matchedRows;
 
-  Matcher(String filePath) throws FileNotFoundException {
+  public Matcher(String filePath) throws FileNotFoundException {
     store = Reader.read(filePath);
-    matchedRows = new HashSet<>(store.getSize() * 2);
+    matchedRows = new HashSet<>(store.size() * 2);
   }
 
   public int getSliceCount() {
     return store.getAllSlices().size();
   }
 
-  public Iterator<Map<Row, Row>> computeMatchSlices() {
+  public Iterator<Map<Row, Row>> computeSliceMatches() {
     var slices = store.getAllSlices().iterator();
     return new Iterator<>() {
       @Override
@@ -41,9 +41,9 @@ public class Matcher {
   public List<Set<Row>> potentialMatchWindows(Slice slice) {
     List<Set<Row>> windows = new ArrayList<>();
 
-    for (int year = slice.getYear() - 1; year <= slice.getYear() + 1; year++) {
-      for (int length = (int) (0.95 * slice.getLength());
-          length <= Math.ceil(1.05 * slice.getLength());
+    for (int year = slice.getMovieYear() - 1; year <= slice.getMovieYear() + 1; year++) {
+      for (int length = (int) (0.95 * slice.getMovieLength());
+          length <= Math.ceil(1.05 * slice.getMovieLength());
           length++) {
         windows.add(store.lookupRows(year, length));
       }
@@ -51,21 +51,16 @@ public class Matcher {
     return windows;
   }
 
-  public Map<Row, Row> matchesFor(Slice slice) {
-    int year = slice.getYear(), len = slice.getLength();
+  private Map<Row, Row> matchesFor(Slice slice) {
+    int movieYear = slice.getMovieYear(), movieLength = slice.getMovieLength();
     Map<Row, Row> matches = new HashMap<>();
 
-    for (Row currentRow : store.lookupRows(year, len)) {
-      if (matchedRows.contains(currentRow.getId())) {
-        continue;
-      }
-      matchedRows.add(currentRow.getId());
-      if (currentRow.getTerms().isEmpty()) {
+    for (Row currentRow : store.lookupRows(movieYear, movieLength)) {
+      if (currentRow.getTerms().isEmpty() || matchedRows.contains(currentRow)) {
         continue;
       }
 
       List<Set<Row>> windows = potentialMatchWindows(slice);
-
       if (windows.isEmpty()) {
         continue;
       }
@@ -74,7 +69,8 @@ public class Matcher {
       double bestScore = Double.NEGATIVE_INFINITY;
       for (Set<Row> window : windows) {
         for (Row candidate : window) {
-          if (!matchedRows.contains(candidate.getId())) {
+          if (!matches.containsKey(candidate) && !currentRow.equals(candidate) &&
+              !matchedRows.contains(candidate)) {
             double currentScore = store.score(candidate, currentRow.getTerms());
             if (currentScore > bestScore) {
               bestMatch = candidate;
@@ -85,8 +81,9 @@ public class Matcher {
       }
       if (bestMatch != null) {
         // no match (maybe only one, or all empty)
-        matchedRows.add(bestMatch.getId());
-        matches.putIfAbsent(currentRow, bestMatch);
+        matchedRows.add(currentRow);
+        matchedRows.add(bestMatch);
+        matches.put(currentRow, bestMatch);
       }
     }
     return matches;

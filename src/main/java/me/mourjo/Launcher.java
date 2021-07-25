@@ -12,12 +12,12 @@ public class Launcher {
 
     try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(outputFilePath)))) {
       int sliceId = 1;
-      var matchSlices = matcher.computeMatchSlices();
-      while (matchSlices.hasNext()) {
-        for (var match : matchSlices.next().entrySet()) {
+      var sliceMatches = matcher.computeSliceMatches();
+      while (sliceMatches.hasNext()) {
+        for (var match : sliceMatches.next().entrySet()) {
           pw.println(match.getKey().getUUID() + "\t" + match.getValue().getUUID());
         }
-        System.out.print("Completed " + sliceId++ + " out of " + slicesCount + " tasks.\r");
+        System.out.print("Completed " + sliceId++ + " out of " + slicesCount + " slices.\r");
       }
       System.out.println("\n");
     } catch (Exception e) {
@@ -26,12 +26,12 @@ public class Launcher {
   }
 
   public static void main(String[] args) throws FileNotFoundException {
-    String inputFilePath =
-        (args.length >= 1) ? args[0] : "src/main/dev_resources/dedup-2020/movies.tsv";
-    String outputFilePath = (args.length >= 2) ? args[1] : "/tmp/matches.csv";
+    String basePath = "src/main/dev_resources/dedup-2020/";
+    String inputFilePath = (args.length >= 1) ? args[0] : basePath + "movies.tsv";
+    String outputFilePath = (args.length >= 2) ? args[1] : basePath + "matches.tsv";
 
-    var matcher = new Matcher(inputFilePath);
-    exportMatchesToFile(matcher, outputFilePath);
+    System.out.println();
+    exportMatchesToFile(new Matcher(inputFilePath), outputFilePath);
   }
 
 }

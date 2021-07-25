@@ -28,7 +28,7 @@ class ReaderTest {
     if (allRowsInStore == null) {
       List<Row> list = new ArrayList<>();
       for (Slice s : store.getAllSlices()) {
-        list.addAll(store.lookupRows(s.getYear(), s.getLength()));
+        list.addAll(store.lookupRows(s.getMovieYear(), s.getMovieLength()));
       }
       list.sort(Comparator.comparingInt(o -> -o.getTerms().size()));
       allRowsInStore = Collections.unmodifiableList(list);
