@@ -23,6 +23,10 @@ public class Matcher {
     return store.getAllSlices().size();
   }
 
+  public int getStoreSize() {
+    return store.size();
+  }
+
   public Iterator<Map<Row, Row>> computeSliceMatches() {
     var slices = store.getAllSlices().iterator();
     return new Iterator<>() {
