@@ -35,19 +35,20 @@ identify the duplications. In other words, finding the **most similar row pairs*
 - To find the current row's best match, we take the current row's terms as the query and find the row that has the highest score. This is an O(N) operation for finding one row's match. 
 - Since the number of rows is large and we need to find every row's best match, doing this iteratively is expensive. To speed this up, we partition the rows into "slices", each slice is a combination of `movieYear` and `movieLength`. The slice with the largest number of rows is in the 1000s.
   ![](src/main/dev_resources/dedup-2020/slice_size.png)
-- As given in the problem statement, a duplicate for a row exists only in slices with +/- 1 year and +/- 5% variance from the length. Having a partitioned row set enables us to read only ~5 slices (ie ~5K rows) for matching each row, instead of 500K rows, reducing the time to compute the final result to [under 5 mins](#runing-the-jar).   
+- As given in the problem statement, a duplicate for a row exists only in slices with +/- 1 year and +/- 5% variance from the length. Having a partitioned row set enables us to read only ~5 slices (ie ~5K rows) for matching each row, instead of 500K rows, reducing the time to compute the final result to [under 5 mins](#runing-the-jar).
+- Rows in a slice are sorted in descending order of terms to increase chances of a better match. 
 
 ## Result
 The computed result is present [here](src/main/dev_resources/dedup-2020/matches.tsv). A match between r1 and r2 is present only once in the file. So the output file size is half of the input size.
 
-Note: A few rows (110) could not be matched. This is mostly due to odd number of rows in some slices.
+Note: ~110 rows could not be matched. This is mostly due to odd number of rows in some slices and some rows with no terms.
 
 ### Compiling 
 Maven and Java need to be installed to compile and run this, this was built using:
 - Apache Maven 3.8.1
 - Java 16.0.1, supported language version: Java 11
 
-### Building the Jar
+Building the Jar can be done through the `maven` command:
 ```shell
 mvn package
 ```
@@ -55,6 +56,11 @@ mvn package
 ### Runing the Jar
 ```shell
 java -cp target/akin-1.0-SNAPSHOT.jar me.mourjo.Launcher
+```
+Passing optional arguments for input and output files is also supported:
+
+```shell
+java -cp target/akin-1.0-SNAPSHOT.jar me.mourjo.Launcher path/to/input_file path_to_output_file
 ```
 
 Expected runtime: ~245 sec (as sampled on a 2019 Macbook Pro).
