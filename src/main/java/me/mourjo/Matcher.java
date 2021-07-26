@@ -2,12 +2,14 @@ package me.mourjo;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 public class Matcher {
 
@@ -45,7 +47,12 @@ public class Matcher {
 
       @Override
       public Map<Row, Row> next() {
-        return matchesFor(slices.next());
+        try {
+          return matchesFor(slices.next());
+        } catch (ExecutionException | InterruptedException e) {
+          e.printStackTrace();
+        }
+        return null;
       }
     };
   }
@@ -56,7 +63,7 @@ public class Matcher {
    * @param slice
    * @return List of rows in all neighbouring slices
    */
-  public List<Set<Row>> potentialMatchWindows(Slice slice) {
+  public List<Set<Row>> generateWindows(Slice slice) {
     List<Set<Row>> windows = new ArrayList<>();
 
     for (int year = slice.getMovieYear() - 1; year <= slice.getMovieYear() + 1; year++) {
@@ -76,7 +83,7 @@ public class Matcher {
    * @param slice
    * @return map of matchings
    */
-  private Map<Row, Row> matchesFor(Slice slice) {
+  private Map<Row, Row> matchesFor(Slice slice) throws ExecutionException, InterruptedException {
     int movieYear = slice.getMovieYear(), movieLength = slice.getMovieLength();
     Map<Row, Row> matches = new HashMap<>();
 
@@ -85,32 +92,49 @@ public class Matcher {
         continue;
       }
 
-      List<Set<Row>> windows = potentialMatchWindows(slice);
+      List<Set<Row>> windows = generateWindows(slice);
       if (windows.isEmpty()) {
         continue;
       }
 
-      Row bestMatch = null;
-      double bestScore = Double.NEGATIVE_INFINITY;
-      for (Set<Row> window : windows) {
-        for (Row candidate : window) {
-          if (!matches.containsKey(candidate) && !currentRow.equals(candidate) &&
-              !matchedRows.contains(candidate)) {
-            double currentScore = store.score(candidate, currentRow.getTerms());
-            if (currentScore > bestScore) {
-              bestMatch = candidate;
-              bestScore = currentScore;
-            }
-          }
-        }
-      }
-      if (bestMatch != null) {
+      var bestMatch = windows.parallelStream()
+          .map((Set<Row> window) -> processWindow(window, currentRow))
+          .filter(windowResult -> windowResult.row != null)
+          .max(Comparator.comparingDouble(windowResult -> windowResult.score));
+
+      if (bestMatch.isPresent()) {
         // no match (maybe only one, or all empty)
         matchedRows.add(currentRow);
-        matchedRows.add(bestMatch);
-        matches.put(currentRow, bestMatch);
+        matchedRows.add(bestMatch.get().row);
+        matches.put(currentRow, bestMatch.get().row);
       }
     }
     return matches;
+  }
+
+  private WindowResult processWindow(Set<Row> window, Row currentRow) {
+    Row bestMatch = null;
+    double bestScore = Double.NEGATIVE_INFINITY;
+    for (Row candidate : window) {
+      if (!currentRow.equals(candidate) && !matchedRows.contains(candidate)) {
+        double currentScore = store.score(candidate, candidate.getTerms());
+        if (currentScore > bestScore) {
+          bestMatch = candidate;
+          bestScore = currentScore;
+        }
+      }
+    }
+    return new WindowResult(bestMatch, bestScore);
+  }
+
+  private static class WindowResult {
+
+    Row row;
+    double score;
+
+    WindowResult(Row r, double s) {
+      row = r;
+      score = s;
+    }
   }
 }

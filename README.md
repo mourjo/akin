@@ -35,8 +35,10 @@ identify the duplications. In other words, finding the **most similar row pairs*
 - To find the current row's best match, we take the current row's terms as the query and find the row that has the highest score. This is an O(N) operation for finding one row's match. 
 - Since the number of rows is large and we need to find every row's best match, doing this iteratively is expensive. To speed this up, we partition the rows into "slices", each slice is a combination of `movieYear` and `movieLength`. The slice with the largest number of rows is in the 1000s.
   ![](src/main/dev_resources/dedup-2020/slice_size.png)
-- As given in the problem statement, a duplicate for a row exists only in slices with +/- 1 year and +/- 5% variance from the length. Having a partitioned row set enables us to read only ~5 slices (ie ~5K rows) for matching each row, instead of 500K rows, reducing the time to compute the final result to [under 5 mins](#runing-the-jar).
+- As given in the problem statement, a duplicate for a row exists only in slices with +/- 1 year and +/- 5% variance from the length. Having a partitioned row set enables us to read only ~5 slices (ie ~5K rows) for matching each row, instead of 500K rows, reducing the time to compute the final result to [under 2 mins](#runing-the-jar).
 - Rows in a slice are sorted in descending order of terms to increase chances of a better match. 
+- In order to increase performance of the matching, we use parallel streams for computing the best match for a row across neighbouring slices, this work is shared across threads in the common fork/join pool (green indicates a thread performing work):
+  ![](src/main/dev_resources/dedup-2020/threads.png)
 
 ## Result
 The computed result is present [here](src/main/dev_resources/dedup-2020/matches.tsv). A match between r1 and r2 is present only once in the file. So the output file size is half of the input size.
@@ -54,6 +56,7 @@ mvn package
 ```
 
 ### Runing the Jar
+The following command runs the jar expecting the input file to be called `movies.tsv` and present in `src/main/dev_resources/dedup-2020`, which is also where the output file is created:
 ```shell
 java -cp target/akin-1.0-SNAPSHOT.jar me.mourjo.Launcher
 ```
@@ -63,4 +66,4 @@ Passing optional arguments for input and output files is also supported:
 java -cp target/akin-1.0-SNAPSHOT.jar me.mourjo.Launcher path/to/input_file path_to_output_file
 ```
 
-Expected runtime: ~245 sec (as sampled on a 2019 Macbook Pro).
+Expected runtime: ~92 sec (as sampled on a 2019 Macbook Pro).
