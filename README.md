@@ -40,6 +40,9 @@ identify the duplications. In other words, finding the **most similar row pairs*
 - In order to increase performance of the matching, we use parallel streams for computing the best match for a row across neighbouring slices, this work is shared across threads in the common fork/join pool (green indicates a thread performing work):
   ![](src/main/dev_resources/dedup-2020/threads.png)
 
+## Limitations
+The BM25 algorithm ranks rows for a given query, which means it is sensitive to choosing the row for whom we are finding the best match. For example, if we choose r1, we will take all terms in r1 and find the best match for this. This can find a row r2. Now that r1 and r2 are matched, r2 will no longer be compared to any other row. This omits the "opportunity" for r2 to find what its best match could be, i.e. the best match from r2's point of view could be another row r3, and not r1. Since scores are comparable only for a given input query, in this implementation, we cannot guarantee to find an optimum match for every row. Order of choosing which row to find matches for decides the final result.
+
 ## Result
 The computed result is present [here](src/main/dev_resources/dedup-2020/matches.tsv). A match between r1 and r2 is present only once in the file. So the output file size is half of the input size.
 
