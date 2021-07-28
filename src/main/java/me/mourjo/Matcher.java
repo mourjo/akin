@@ -117,7 +117,7 @@ public class Matcher {
     double bestScore = Double.NEGATIVE_INFINITY;
     for (Row candidate : window) {
       if (!currentRow.equals(candidate) && !matchedRows.contains(candidate)) {
-        double currentScore = store.score(candidate, candidate.getTerms());
+        double currentScore = store.score(candidate, currentRow.getTerms());
         if (currentScore > bestScore) {
           bestMatch = candidate;
           bestScore = currentScore;
